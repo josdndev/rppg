@@ -16,7 +16,7 @@ from datetime import datetime
 import time
 import streamlit_webrtc as webrtc
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
-import av
+# import av  # Commented out due to deployment issues
 
 # Configuración inicial de Streamlit
 st.set_page_config(layout="wide") # Use wider layout for better viewing
@@ -706,7 +706,8 @@ class VideoRecorder(VideoProcessorBase):
         img = frame.to_ndarray(format="bgr24")
         if self.recording:
             self.frames.append(img)
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
+        # Return the frame without av conversion
+        return frame
 
 # --- Streamlit UI ---
 st.markdown("""
@@ -926,11 +927,147 @@ if st.session_state['show_camera']:
                         st.info("Proceso completado.")
                         st.session_state['show_camera'] = False
                         st.session_state['video_processed'] = False
+# Alternative: File upload option
+st.markdown("---")
+st.markdown("### Alternativa: Subir video desde archivo")
+uploaded_file = st.file_uploader("O sube un video desde tu dispositivo:", type=['mp4', 'avi', 'mov', 'mkv'])
+
+if uploaded_file is not None:
+    # Save uploaded file temporarily
+    tmp_file_path = tempfile.mktemp(suffix='.mp4')
+    with open(tmp_file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    
+    # Validate duration
+    cap = cv2.VideoCapture(tmp_file_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    duration = frame_count / fps if fps > 0 else 0
+    cap.release()
+    
+    if duration < 29.5:
+        st.warning(f"El video subido dura solo {duration:.1f} segundos. Por favor, sube un video de al menos 30 segundos.")
+        if os.path.exists(tmp_file_path):
+            os.unlink(tmp_file_path)
+    else:
+        st.info(f"Video cargado ({duration:.1f} segundos). Procesando...")
+        proceso_bar = st.progress(0, text="Leyendo video y detectando rostro...")
+        st.markdown("## Proceso de Análisis rPPG")
+        with st.spinner('Leyendo video y detectando rostro...'):
+            face_frames, FS = read_video_with_face_detection_and_FS(tmp_file_path)
+        proceso_bar.progress(0.33, text="Extrayendo señal rPPG (CHROM)...")
+        if face_frames is not None and FS is not None:
+            with st.spinner('Extrayendo señal rPPG (CHROM)...'):
+                BVP_signal = CHROME_DEHAAN(face_frames, FS)
+            proceso_bar.progress(0.66, text="Calculando indicadores vitales...")
+            if BVP_signal is not None:
+                with st.spinner('Calculando indicadores vitales...'):
+                    hr_result = extract_heart_rate(BVP_signal, FS)
+                    if hr_result:
+                        heart_rate, peaks = hr_result
+                    else:
+                        heart_rate, peaks = None, None
+                    respiratory_rate = extract_respiratory_rate(BVP_signal, FS)
+                    sdnn, rmssd = calculate_hrv(peaks, FS)
+                proceso_bar.progress(1.0, text="¡Análisis completado!")
+                
+                # Display results (same as camera version)
+                st.markdown("---")
+                st.markdown("## Resultados del Análisis")
+                st.markdown(f"*Análisis completado el {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}*")
+                
+                # Dashboard
+                st.subheader("Dashboard de Indicadores Vitales")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if heart_rate is not None:
+                        if heart_rate < 60:
+                            interpretation = "Bradicardia (baja)"
+                            color = "blue"
+                        elif heart_rate > 100:
+                            interpretation = "Taquicardia (alta)"
+                            color = "red"
+                        else:
+                            interpretation = "Normal"
+                            color = "green"
+                        
+                        st.markdown(f"### ❤️ Frecuencia Cardíaca")
+                        st.markdown(f"<h2 style='color:{color};'>{heart_rate:.1f} BPM</h2>", unsafe_allow_html=True)
+                        st.markdown(f"*Interpretación: {interpretation}*")
+                    else:
+                        st.error("No se pudo estimar la Frecuencia Cardíaca.")
+
+                with col2:
+                    if respiratory_rate is not None:
+                        if respiratory_rate < 12:
+                            interpretation = "Bradipnea (baja)"
+                            color = "blue"
+                        elif respiratory_rate > 20:
+                            interpretation = "Taquipnea (alta)"
+                            color = "red"
+                        else:
+                            interpretation = "Normal"
+                            color = "green"
+                        
+                        st.markdown(f"### 🌬️ Tasa Respiratoria")
+                        st.markdown(f"<h2 style='color:{color};'>{respiratory_rate:.1f} resp/min</h2>", unsafe_allow_html=True)
+                        st.markdown(f"*Interpretación: {interpretation}*")
+                    else:
+                        st.error("No se pudo estimar la Tasa Respiratoria.")
+
+                with col3:
+                    if sdnn is not None and rmssd is not None:
+                        st.markdown(f"### 📊 HRV")
+                        st.markdown(f"<h3 style='color:purple;'>SDNN: {sdnn:.1f} ms</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='color:purple;'>RMSSD: {rmssd:.1f} ms</h3>", unsafe_allow_html=True)
+                        st.markdown("*Variabilidad del ritmo cardíaco*")
+                    else:
+                        st.error("No se pudo calcular el HRV.")
+                
+                # Results table
+                st.subheader("Resumen de Resultados")
+                results_data = {
+                    "Indicador": ["Frecuencia Cardíaca", "Tasa Respiratoria", "SDNN (HRV)", "RMSSD (HRV)"],
+                    "Valor": [
+                        f"{heart_rate:.1f} BPM" if heart_rate is not None else "No disponible",
+                        f"{respiratory_rate:.1f} resp/min" if respiratory_rate is not None else "No disponible",
+                        f"{sdnn:.1f} ms" if sdnn is not None else "No disponible",
+                        f"{rmssd:.1f} ms" if rmssd is not None else "No disponible"
+                    ],
+                    "Timestamp": [datetime.now().strftime('%Y-%m-%d %H:%M:%S')] * 4,
+                    "Video": [uploaded_file.name] * 4
+                }
+                
+                results_df = pd.DataFrame(results_data)
+                st.dataframe(results_df, use_container_width=True)
+                
+                # Download CSV
+                csv = results_df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Descargar resultados como CSV",
+                    data=csv,
+                    file_name=f"resultados_rppg_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+        else:
+            proceso_bar.progress(1.0, text="Fallo en la lectura del video o detección de rostro.")
+            st.error("Fallo en la lectura del video o detección de rostro. No se puede continuar.")
+        
+        # Clean up
+        if os.path.exists(tmp_file_path):
+            try:
+                os.unlink(tmp_file_path)
+            except Exception as e:
+                st.warning(f"No se pudo eliminar el archivo temporal: {tmp_file_path}. Error: {e}")
+
 else:
     st.markdown("""
     ## Instrucciones
 
     1. Haz clic en el botón "Empezar análisis" para grabar un video con tu cámara web.
-    2. Asegúrate de que tu rostro esté bien iluminado y visible durante al menos 30 segundos.
-    3. Mantén la cabeza estable y mira hacia la cámara.
+    2. O sube un video desde tu dispositivo usando la opción de arriba.
+    3. Asegúrate de que tu rostro esté bien iluminado y visible durante al menos 30 segundos.
+    4. Mantén la cabeza estable y mira hacia la cámara.
+    5. El análisis comenzará automáticamente después de detener la grabación o subir el archivo.
     """)
