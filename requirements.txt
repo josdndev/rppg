@@ -6,3 +6,4 @@ scipy
 pandas
 matplotlib
 streamlit-webrtc
+libgl1-mesa-glx
