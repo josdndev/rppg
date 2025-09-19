@@ -40,7 +40,7 @@ markdown-it-py==3.0.0
 MarkupSafe==3.0.2
 matplotlib==3.10.3
 mdurl==0.1.2
-mediapipe==0.10.11
+mediapipe
 ml_dtypes==0.5.1
 narwhals==1.48.1
 numpy==2.2.6
