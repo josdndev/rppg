@@ -4,6 +4,3 @@ gatherUsageStats = false
 [server]
 headless = true
 enableCORS = false
-
-[client]
-showReportUploadButton = false
