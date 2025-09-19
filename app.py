@@ -725,98 +725,98 @@ def display_results(heart_rate, respiratory_rate, sdnn, rmssd, tmp_file_path):
         )
 
 # --- Streamlit UI ---
-st.markdown("""
-**IMPORTANTE:** El análisis requiere un video de al menos 30 segundos. Haz clic en "Empezar análisis" para grabar un video con tu cámara web.
-""")
+#st.markdown("""
+#**IMPORTANTE:** El análisis requiere un video de al menos 30 segundos. Haz clic en "Empezar análisis" para grabar un video con tu cámara web.
+#""")
 
-start = st.button("Empezar análisis")
+#start = st.button("Empezar análisis")
 
-if 'show_camera' not in st.session_state:
-    st.session_state['show_camera'] = False
-if 'recording' not in st.session_state:
-    st.session_state['recording'] = False
-if 'video_processed' not in st.session_state:
-    st.session_state['video_processed'] = False
+#if 'show_camera' not in st.session_state:
+#    st.session_state['show_camera'] = False
+#if 'recording' not in st.session_state:
+#    st.session_state['recording'] = False
+#if 'video_processed' not in st.session_state:
+#    st.session_state['video_processed'] = False
 
-if start:
-    st.session_state['show_camera'] = True
-    st.session_state['recording'] = False
-    st.session_state['video_processed'] = False
+#if start:
+#    st.session_state['show_camera'] = True
+#    st.session_state['recording'] = False
+#    st.session_state['video_processed'] = False
 
-if st.session_state['show_camera']:
-    st.info("Haz clic en 'Iniciar grabación' para comenzar (mínimo 30 segundos). Cuando termines, haz clic en 'Detener grabación' y espera el análisis.")
-    ctx = webrtc_streamer(
-        key="video-recorder",
-        mode=WebRtcMode.SENDRECV,
-        media_stream_constraints={"video": True, "audio": False},
-        rtc_configuration={
-            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-        },
-        video_processor_factory=VideoRecorder,
-        async_processing=True,
-    )
-    if ctx.video_processor:
-        if not st.session_state['recording'] and not st.session_state['video_processed']:
-            if st.button("Iniciar grabación"):
-                ctx.video_processor.frames = []
-                ctx.video_processor.recording = True
-                st.session_state['recording'] = True
-                st.warning("Grabando... Mantén tu rostro visible y estable.")
-        if st.session_state['recording']:
-            if st.button("Detener grabación"):
-                ctx.video_processor.recording = False
-                st.session_state['recording'] = False
-                st.session_state['video_processed'] = True
-                st.success("¡Video grabado! Procesando...")
-                frames = ctx.video_processor.frames
-                if len(frames) > 0:
-                    height, width, _ = frames[0].shape
-                    tmp_file_path = tempfile.mktemp(suffix='.mp4')
-                    out = cv2.VideoWriter(tmp_file_path, cv2.VideoWriter_fourcc(*'mp4v'), 20, (width, height))
-                    for f in frames:
-                        out.write(f)
-                    out.release()
-                    cap = cv2.VideoCapture(tmp_file_path)
-                    fps = cap.get(cv2.CAP_PROP_FPS)
-                    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-                    duration = frame_count / fps if fps > 0 else 0
-                    cap.release()
-                    if duration < 29.5:
-                        st.warning(f"El video grabado dura solo {duration:.1f} segundos. Por favor, graba un video de al menos 30 segundos.")
-                        if os.path.exists(tmp_file_path):
-                            os.unlink(tmp_file_path)
-                        st.session_state['show_camera'] = True
-                        st.session_state['video_processed'] = False
-                    else:
-                        st.info(f"Video capturado ({duration:.1f} segundos). Procesando...")
-                        proceso_bar = st.progress(0, text="Leyendo video y detectando rostro...")
-                        st.markdown("## Proceso de Análisis rPPG")
-                        with st.spinner('Leyendo video y detectando rostro...'):
-                            face_frames, FS = read_video(tmp_file_path)
-                        proceso_bar.progress(0.33, text="Extrayendo señal rPPG (CHROM)...")
-                        if face_frames is not None and FS is not None:
-                            with st.spinner('Extrayendo señal rPPG (CHROM)...'):
-                                BVP_signal = extract_bvp(face_frames, FS)
-                            proceso_bar.progress(0.66, text="Calculando indicadores vitales...")
-                            if BVP_signal is not None:
-                                with st.spinner('Calculando indicadores vitales...'):
-                                    heart_rate, peaks = analyze_heart_rate(BVP_signal, FS)
-                                    respiratory_rate = analyze_respiratory_rate(BVP_signal, FS)
-                                    sdnn, rmssd = calculate_hrv(peaks, FS)
-                                proceso_bar.progress(1.0, text="¡Análisis completado!")
-                                
-                                display_results(heart_rate, respiratory_rate, sdnn, rmssd, tmp_file_path)
-                        else:
-                            proceso_bar.progress(1.0, text="Fallo en la lectura del video o detección de rostro.")
-                            st.error("Fallo en la lectura del video o detección de rostro. No se puede continuar.")
-                        if os.path.exists(tmp_file_path):
-                            try:
-                                os.unlink(tmp_file_path)
-                            except Exception as e:
-                                st.warning(f"No se pudo eliminar el archivo temporal: {tmp_file_path}. Error: {e}")
-                        st.info("Proceso completado.")
-                        st.session_state['show_camera'] = False
-                        st.session_state['video_processed'] = False
+#if st.session_state['show_camera']:
+#    st.info("Haz clic en 'Iniciar grabación' para comenzar (mínimo 30 segundos). Cuando termines, haz clic en 'Detener grabación' y espera el análisis.")
+#    ctx = webrtc_streamer(
+#        key="video-recorder",
+#        mode=WebRtcMode.SENDRECV,
+#        media_stream_constraints={"video": True, "audio": False},
+#        rtc_configuration={
+#            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+#        },
+#        video_processor_factory=VideoRecorder,
+#        async_processing=True,
+#    )
+#    if ctx.video_processor:
+#        if not st.session_state['recording'] and not st.session_state['video_processed']:
+#            if st.button("Iniciar grabación"):
+#                ctx.video_processor.frames = []
+#                ctx.video_processor.recording = True
+#                st.session_state['recording'] = True
+#                st.warning("Grabando... Mantén tu rostro visible y estable.")
+#        if st.session_state['recording']:
+#            if st.button("Detener grabación"):
+#                ctx.video_processor.recording = False
+#                st.session_state['recording'] = False
+#                st.session_state['video_processed'] = True
+#                st.success("¡Video grabado! Procesando...")
+#                frames = ctx.video_processor.frames
+#                if len(frames) > 0:
+#                    height, width, _ = frames[0].shape
+#                    tmp_file_path = tempfile.mktemp(suffix='.mp4')
+#                    out = cv2.VideoWriter(tmp_file_path, cv2.VideoWriter_fourcc(*'mp4v'), 20, (width, height))
+#                    for f in frames:
+#                        out.write(f)
+#                    out.release()
+#                    cap = cv2.VideoCapture(tmp_file_path)
+#                    fps = cap.get(cv2.CAP_PROP_FPS)
+#                    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+#                    duration = frame_count / fps if fps > 0 else 0
+#                    cap.release()
+#                    if duration < 29.5:
+#                        st.warning(f"El video grabado dura solo {duration:.1f} segundos. Por favor, graba un video de al menos 30 segundos.")
+#                        if os.path.exists(tmp_file_path):
+#                            os.unlink(tmp_file_path)
+#                        st.session_state['show_camera'] = True
+#                        st.session_state['video_processed'] = False
+#                    else:
+#                        st.info(f"Video capturado ({duration:.1f} segundos). Procesando...")
+#                        proceso_bar = st.progress(0, text="Leyendo video y detectando rostro...")
+#                        st.markdown("## Proceso de Análisis rPPG")
+#                        with st.spinner('Leyendo video y detectando rostro...'):
+#                            face_frames, FS = read_video(tmp_file_path)
+#                        proceso_bar.progress(0.33, text="Extrayendo señal rPPG (CHROM)...")
+#                        if face_frames is not None and FS is not None:
+#                            with st.spinner('Extrayendo señal rPPG (CHROM)...'):
+#                                BVP_signal = extract_bvp(face_frames, FS)
+#                            proceso_bar.progress(0.66, text="Calculando indicadores vitales...")
+#                            if BVP_signal is not None:
+#                                with st.spinner('Calculando indicadores vitales...'):
+#                                    heart_rate, peaks = analyze_heart_rate(BVP_signal, FS)
+#                                    respiratory_rate = analyze_respiratory_rate(BVP_signal, FS)
+#                                    sdnn, rmssd = calculate_hrv(peaks, FS)
+#                                proceso_bar.progress(1.0, text="¡Análisis completado!")
+#                                
+#                                display_results(heart_rate, respiratory_rate, sdnn, rmssd, tmp_file_path)
+#                        else:
+#                            proceso_bar.progress(1.0, text="Fallo en la lectura del video o detección de rostro.")
+#                            st.error("Fallo en la lectura del video o detección de rostro. No se puede continuar.")
+#                        if os.path.exists(tmp_file_path):
+#                            try:
+#                                os.unlink(tmp_file_path)
+#                            except Exception as e:
+#                                st.warning(f"No se pudo eliminar el archivo temporal: {tmp_file_path}. Error: {e}")
+#                        st.info("Proceso completado.")
+#                        st.session_state['show_camera'] = False
+#                        st.session_state['video_processed'] = False
 # Alternative: File upload option
 st.markdown("---")
 st.markdown("### Alternativa: Subir video desde archivo")
