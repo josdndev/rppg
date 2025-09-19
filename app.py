@@ -18,8 +18,15 @@ from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 # Monkey-patch streamlit_webrtc to use st.rerun() if st.experimental_rerun() is not available
 try:
     from streamlit import experimental_rerun
+    print("st.experimental_rerun is available")
+    print(f"st.experimental_rerun: {st.experimental_rerun}")
 except ImportError:
+    print("st.experimental_rerun is NOT available")
     experimental_rerun = st.rerun
+    print(f"st.rerun: {st.rerun}")
+
+print(f"Streamlit version: {st.__version__}")
+
 
 # Configuración inicial de Streamlit
 st.set_page_config(layout="wide")
