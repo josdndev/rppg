@@ -12,15 +12,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
 
-# Monkey-patch streamlit_webrtc to use st.rerun() if st.experimental_rerun() is not available
-
-# Hacer el monkey-patching para que st.experimental_rerun exista y sea st.rerun
+import streamlit as st
 if not hasattr(st, 'experimental_rerun'):
     st.experimental_rerun = st.rerun
-
-# Ahora importamos streamlit_webrtc y otros módulos
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
 
 # Configuración inicial de Streamlit
 st.set_page_config(layout="wide")
