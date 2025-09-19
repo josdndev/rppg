@@ -602,15 +602,15 @@ def calculate_hrv(peaks, FS):
 
     return sdnn, rmssd
 
-class VideoRecorder(VideoProcessorBase):
-    def __init__(self):
-        self.frames = []
-        self.recording = False
-    def recv(self, frame):
-        img = frame.to_ndarray(format="bgr24")
-        if self.recording:
-            self.frames.append(img)
-        return frame
+#class VideoRecorder(VideoProcessorBase):
+#    def __init__(self):
+#        self.frames = []
+#        self.recording = False
+#    def recv(self, frame):
+#        img = frame.to_ndarray(format="bgr24")
+#        if self.recording:
+#            self.frames.append(img)
+#        return frame
 
 def display_results(heart_rate, respiratory_rate, sdnn, rmssd, tmp_file_path):
     """Displays the results in a dashboard format."""
