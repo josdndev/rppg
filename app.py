@@ -15,6 +15,12 @@ import time
 import streamlit_webrtc as webrtc
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, WebRtcMode
 
+# Monkey-patch streamlit_webrtc to use st.rerun() if st.experimental_rerun() is not available
+try:
+    from streamlit import experimental_rerun
+except ImportError:
+    experimental_rerun = st.rerun
+
 # Configuración inicial de Streamlit
 st.set_page_config(layout="wide")
 st.title("Estimación de Indicadores Vitales desde Video (rPPG)")
