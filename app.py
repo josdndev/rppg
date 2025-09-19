@@ -1,3 +1,7 @@
+# Al principio de tu archivo app.py, antes de cualquier import de Streamlit
+import os
+os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
+os.environ['STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION'] = 'false'
 import numpy as np
 import math
 import cv2
