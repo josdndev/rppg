@@ -1,6 +1,9 @@
+
 [browser]
+serverAddress = "0.0.0.0"
 gatherUsageStats = false
 
 [server]
 headless = true
-enableCORS = false
+enableCORS = true
+enableXsrfProtection = false  # Esto podría ayudar con problemas de iframe
