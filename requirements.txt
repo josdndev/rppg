@@ -85,6 +85,7 @@ SQLAlchemy==2.0.30
 sqlmodel==0.0.24
 starlette==0.37.2
 streamlit==1.47.1
+streamlit_webrtc==0.45.0
 tenacity==9.1.2
 toml==0.10.2
 tornado==6.5.1
