@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: rppg-app
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    buildCommand: "echo 'Build handled by Dockerfile'"
+    startCommand: "echo 'Start handled by Dockerfile'"
